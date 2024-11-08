@@ -1,6 +1,5 @@
 import numpy as np
 import librosa
-import sounddevice as sd
 from keras.models import load_model
 import os
 import sys
@@ -21,19 +20,27 @@ except Exception as e:
     print(f"An error occurred while loading the model: {e}")
     exit(1)
 
-# Function to record audio
-def record_audio(duration=5, fs=22050):
-    print("Recording...")
-    audio_data = sd.rec(int(duration * fs), samplerate=fs, channels=1, dtype='float32')
-    sd.wait()  # Wait until recording is finished
-    print("Recording complete.")
-    return audio_data
+
+# Function to load audio from file
+def load_audio_file(file_path, fs=22050):
+    try:
+        audio_data, _ = librosa.load(file_path, sr=fs)
+        print("Audio file loaded successfully.")
+        return audio_data
+    except FileNotFoundError:
+        print(f"Error: The audio file was not found at the path: {file_path}")
+        return None
+    except Exception as e:
+        print(f"An error occurred while loading the audio file: {e}")
+        return None
+
 
 # Function to extract MFCCs
 def extract_mfcc(audio_data, fs=22050):
-    mfccs = librosa.feature.mfcc(y=audio_data.flatten(), sr=fs, n_mfcc=40)
+    mfccs = librosa.feature.mfcc(y=audio_data, sr=fs, n_mfcc=40)
     mfccs = np.mean(mfccs.T, axis=0)
     return mfccs.reshape(1, -1)  # Reshape for prediction
+
 
 # Function to predict emotion
 def predict_emotion(audio_data):
@@ -47,16 +54,20 @@ def predict_emotion(audio_data):
         print(f"An error occurred during prediction: {e}")
         return None
 
+
 # Main execution flow
 if __name__ == "__main__":
-    audio_data = record_audio()
-    predictions = predict_emotion(audio_data)
+    # Replace 'your_audio_file_path.wav' with the path to your audio file
+    audio_file_path = r'C:\Users\Dell\Downloads\OAF_bar_ps.wav'
+    audio_data = load_audio_file(audio_file_path)
 
-    if predictions is not None:
-        predicted_index = np.argmax(predictions)
-        # Assuming you have a predefined list of emotion labels
-        emotion_labels = ['Anger', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']  # Update as needed
-        predicted_emotion = emotion_labels[predicted_index]
-        
-        # Use sys.stdout to print the predicted emotion with proper encoding
-        sys.stdout.buffer.write(f'Predicted Emotion: {predicted_emotion}\n'.encode('utf-8'))
+    if audio_data is not None:
+        predictions = predict_emotion(audio_data)
+        if predictions is not None:
+            predicted_index = np.argmax(predictions)
+            # Assuming you have a predefined list of emotion labels
+            emotion_labels = ['Anger', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']  # Update as needed
+            predicted_emotion = emotion_labels[predicted_index]
+
+            # Use sys.stdout to print the predicted emotion with proper encoding
+            sys.stdout.buffer.write(f'Predicted Emotion: {predicted_emotion}\n'.encode('utf-8'))
