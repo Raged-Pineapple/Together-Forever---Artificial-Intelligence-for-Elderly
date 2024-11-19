@@ -36,7 +36,7 @@ def is_relevant_file_for_panic(filename):
     return False
 
 
-# Loop through all files in the dataset directory to identify Non-Panic files
+# Loop through all files in the dataset directory to identify Non-Panic files.
 for root, dirs, files in os.walk(dataset_path):
     for file in files:
         if file.endswith('.wav'):  # Only process .wav files
